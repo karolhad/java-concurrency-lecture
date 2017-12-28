@@ -30,7 +30,7 @@ public class InstrumentSyncController {
       this.priceService = priceService;
    }
 
-   @RequestMapping("/client/{clientId}/instruments")
+   @RequestMapping("/sync/client/{clientId}/instruments")
    public Collection<PricedInstrument> getFavouriteInstruments(@PathVariable("clientId") int clientId) {
       final Client client = clientService.getClient(clientId); // ~1sec
 

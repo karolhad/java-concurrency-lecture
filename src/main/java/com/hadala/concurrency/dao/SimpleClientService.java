@@ -9,7 +9,7 @@ import static com.hadala.concurrency.dao.Sleep.sleep;
 public class SimpleClientService implements ClientService {
    @Override
    public Client getClient(int clientId) {
-      sleep(1000);
+      sleep(500);
       switch (clientId) {
          case 101:
             return new Client(clientId, "Joe", "Doe", "USD");

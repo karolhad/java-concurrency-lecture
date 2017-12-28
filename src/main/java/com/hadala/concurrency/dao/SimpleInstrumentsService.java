@@ -17,7 +17,7 @@ public class SimpleInstrumentsService implements InstrumentsService {
 
    @Override
    public Collection<Instrument> getFavouriteInstruments(int clientId) {
-      sleep(1500);
+      sleep(600);
 
       switch (clientId) {
          case 101:
