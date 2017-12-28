@@ -3,7 +3,7 @@ package com.hadala.concurrency.controller;
 import com.hadala.concurrency.dao.ClientService;
 import com.hadala.concurrency.dao.InstrumentsService;
 import com.hadala.concurrency.dao.PriceService;
-import com.hadala.concurrency.model.Client;
+import com.hadala.concurrency.model.Response;
 import com.hadala.concurrency.model.Instrument;
 import com.hadala.concurrency.model.PricedInstrument;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,15 +31,16 @@ public class InstrumentSyncController {
    }
 
    @RequestMapping("/sync/client/{clientId}/instruments")
-   public Collection<PricedInstrument> getFavouriteInstruments(@PathVariable("clientId") int clientId) {
-      final Client client = clientService.getClient(clientId); // ~1sec
+   public Response getFavouriteInstruments(@PathVariable("clientId") int clientId) {
+      boolean canTrade = clientService.hasPermissionToTrade(clientId); // ~1sec
 
-      final Collection<Instrument> favouriteInstruments = instrumentsService.getFavouriteInstruments(clientId); // ~1.5sec
+      Collection<Instrument> favouriteInstruments = instrumentsService.getFavouriteInstruments(clientId); // ~0.6sec
 
-      return favouriteInstruments
+      Collection<PricedInstrument>  pricedInstruments = favouriteInstruments
             .stream()
-            .map(
-                  instrument -> new PricedInstrument(instrument, priceService.getPrice(instrument.getCode(), client.getCurrency()))) //~0.5sec
+            .map(instrument -> new PricedInstrument(instrument, priceService.getPrice(instrument.getCode()))) //~0.5sec
             .collect(Collectors.toList());
+
+      return new Response(clientId, pricedInstruments, canTrade);
    }
 }

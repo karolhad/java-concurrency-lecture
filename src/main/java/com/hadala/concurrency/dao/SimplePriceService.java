@@ -21,26 +21,12 @@ class SimplePriceService implements PriceService {
    );
 
    @Override
-   public Price getPrice(String instrumentCode, String currencyCode) {
+   public Price getPrice(String instrumentCode) {
       sleep(500);
-      final Double basePrice = PRICES.get(instrumentCode) * getCurrencyFactor(currencyCode);
+      final Double basePrice = PRICES.get(instrumentCode);
       return new Price(
             BigDecimal.valueOf(1.01 * basePrice).setScale(2, RoundingMode.FLOOR),
             BigDecimal.valueOf(0.99 * basePrice).setScale(2, RoundingMode.FLOOR)
       );
-   }
-
-   private Double getCurrencyFactor(String currencyCode) {
-      switch (currencyCode) {
-         case "USD":
-            return 1.0;
-         case "GBP":
-            return 1.34352;
-         case "PLN":
-            return 3.54;
-         default:
-            return 1.0;
-
-      }
    }
 }

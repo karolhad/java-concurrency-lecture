@@ -3,19 +3,21 @@ package com.hadala.concurrency.model;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+
 @ToString
 @EqualsAndHashCode
 public class Client {
    private int id;
    private String firstName;
    private String lastName;
-   private String currency;
+   private BigDecimal money;
 
-   public Client(int id, String firstName, String lastName, String currency) {
+   public Client(int id, String firstName, String lastName, BigDecimal money) {
       this.id = id;
       this.firstName = firstName;
       this.lastName = lastName;
-      this.currency = currency;
+      this.money = money;
    }
 
    public long getId() {
@@ -30,7 +32,7 @@ public class Client {
       return lastName;
    }
 
-   public String getCurrency() {
-      return currency;
+   public BigDecimal getMoney() {
+      return money;
    }
 }

@@ -3,7 +3,7 @@ package com.hadala.concurrency.controller;
 import com.hadala.concurrency.dao.ClientService;
 import com.hadala.concurrency.dao.InstrumentsService;
 import com.hadala.concurrency.dao.PriceService;
-import com.hadala.concurrency.model.Client;
+import com.hadala.concurrency.model.Response;
 import com.hadala.concurrency.model.Instrument;
 import com.hadala.concurrency.model.PricedInstrument;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,7 +22,7 @@ public class InstrumentFutureController {
    private final ClientService clientService;
    private final InstrumentsService instrumentsService;
    private final PriceService priceService;
-   private ExecutorService executorService;
+   private final ExecutorService executorService;
 
    @Autowired
    public InstrumentFutureController(ClientService clientService,
@@ -34,36 +31,34 @@ public class InstrumentFutureController {
       this.clientService = clientService;
       this.instrumentsService = instrumentsService;
       this.priceService = priceService;
+      this.executorService = Executors.newCachedThreadPool();
    }
 
    @RequestMapping("/future/client/{clientId}/instruments")
-   public Collection<PricedInstrument> getFavouriteInstruments(@PathVariable("clientId") int clientId) throws ExecutionException, InterruptedException {
+   public Response getFavouriteInstruments(@PathVariable("clientId") int clientId) throws ExecutionException, InterruptedException {
 
-      executorService = Executors.newCachedThreadPool();
+      Future<Boolean> canTradeFuture = executorService.submit(() -> clientService.hasPermissionToTrade(clientId));
 
-      final Future<Client> clientFuture = executorService.submit(() -> clientService.getClient(clientId));
+      Future<Collection<Instrument>> instrumentsFuture = executorService.submit(
+            () -> instrumentsService.getFavouriteInstruments(clientId));
 
-      final Future<Collection<Instrument>> instrumentsFuture = executorService
-            .submit(() -> instrumentsService.getFavouriteInstruments(clientId));
+      boolean canTrade = canTradeFuture.get();
 
+      Collection<Instrument> instruments = instrumentsFuture.get();
 
-      final Collection<Instrument> instruments = instrumentsFuture.get();
-      final Client client = clientFuture.get();
-
-
-      final List<Future<PricedInstrument>> pricedInstrumentFutures = instruments
+      List<Future<PricedInstrument>> pricedInstrumentFutures = instruments
             .stream()
             .map(
-                  instrument -> executorService.submit(() -> new PricedInstrument(instrument, priceService
-                        .getPrice(instrument.getCode(), client.getCurrency()))))
+                  instrument -> executorService.submit(() -> new PricedInstrument(instrument, priceService.getPrice(instrument.getCode()))))
             .collect(Collectors.toList());
 
 
-      return pricedInstrumentFutures.stream().map(this::safeGetFuture).collect(Collectors.toList());
-
+      Collection<PricedInstrument> pricedInstruments = pricedInstrumentFutures.stream().map(this::safeGetFuture)
+                                                                                    .collect(Collectors.toList());
+      return new Response(clientId, pricedInstruments, canTrade);
    }
 
-   private  PricedInstrument safeGetFuture(Future<PricedInstrument> future) {
+   private PricedInstrument safeGetFuture(Future<PricedInstrument> future) {
       try {
          return future.get();
       } catch (Exception e) {
