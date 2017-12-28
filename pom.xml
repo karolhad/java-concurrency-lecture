@@ -29,6 +29,11 @@
             <artifactId>guava</artifactId>
             <version>23.6-jre</version>
         </dependency>
+        <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>2.1.8</version>
+        </dependency>
     </dependencies>
 
     <properties>
