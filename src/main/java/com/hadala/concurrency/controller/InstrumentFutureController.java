@@ -37,7 +37,7 @@ public class InstrumentFutureController {
    @RequestMapping("/future/client/{clientId}/instruments")
    public Response getFavouriteInstruments(@PathVariable("clientId") int clientId) throws ExecutionException, InterruptedException {
 
-      Future<Boolean> canTradeFuture = executorService.submit(() -> clientService.hasPermissionToTrade(clientId));
+      Future<Boolean> canTradeFuture = executorService.submit(() -> clientService.hasPermissionToCryptoCurrency(clientId));
 
       Future<Collection<Instrument>> instrumentsFuture = executorService.submit(
             () -> instrumentsService.getFavouriteInstruments(clientId));

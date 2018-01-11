@@ -7,4 +7,5 @@ import java.util.Collection;
 public interface InstrumentsService {
 
    Collection<Instrument> getFavouriteInstruments(int clientId);
+   Collection<Instrument> getFavouriteCryptoCurrencies(int clientId);
 }

@@ -11,7 +11,7 @@ import java.util.Map;
 import static com.hadala.concurrency.dao.Sleep.sleep;
 
 @Service
-class SimplePriceService implements PriceService {
+public class SimplePriceService implements PriceService {
 
    private final static Map<String, Double> PRICES = ImmutableMap.of(
          "GBP", 1.34352,

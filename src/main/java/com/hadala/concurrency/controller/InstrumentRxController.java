@@ -7,16 +7,14 @@ import com.hadala.concurrency.model.Instrument;
 import com.hadala.concurrency.model.PricedInstrument;
 import com.hadala.concurrency.model.Response;
 import io.reactivex.Observable;
+import io.reactivex.schedulers.Schedulers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
-import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.List;
 
 @RestController
 public class InstrumentRxController {
@@ -24,7 +22,6 @@ public class InstrumentRxController {
    private final ClientService clientService;
    private final InstrumentsService instrumentsService;
    private final PriceService priceService;
-   private ExecutorService executorService;
 
    @Autowired
    public InstrumentRxController(ClientService clientService,
@@ -33,33 +30,31 @@ public class InstrumentRxController {
       this.clientService = clientService;
       this.instrumentsService = instrumentsService;
       this.priceService = priceService;
-      this.executorService = Executors.newCachedThreadPool();
    }
 
    @RequestMapping("/rx/client/{clientId}/instruments")
-   public DeferredResult<Response> getFavouriteInstruments(@PathVariable("clientId") int clientId) throws ExecutionException, InterruptedException {
-      long start = System.currentTimeMillis();
+   public DeferredResult<Response> getFavouriteInstruments(@PathVariable("clientId") int clientId) {
+      Observable<Boolean> canTradeObservable = Observable.fromCallable(() -> clientService.hasPermissionToCryptoCurrency(clientId))
+                                                         .subscribeOn(Schedulers.io());
 
-      Observable<Boolean> canTradeObservable = Observable.fromCallable(() -> clientService.hasPermissionToTrade(clientId));
+      Observable<Instrument> instrumentObservable = Observable.fromCallable(() -> instrumentsService.getFavouriteInstruments(clientId))
+                                                                          .subscribeOn(Schedulers.io())
+                                                                          .flatMapIterable(x -> x);
 
-      Observable<Collection<Instrument>> instrumentObservable = Observable.fromCallable(() -> instrumentsService.getFavouriteInstruments(clientId));
+      Observable<List<PricedInstrument>> pricedInstrumentsObservable = instrumentObservable
+            .flatMap(instrument -> Observable.fromCallable(
+                  () -> new PricedInstrument(instrument, priceService.getPrice(instrument.getCode()))).subscribeOn(Schedulers.io()))
+            .toList()
+            .toObservable();
 
 
-      final Observable<Instrument> instrumentObservable1 = instrumentObservable.flatMapIterable(x -> x);
-      System.out.println("before flat map " + (System.currentTimeMillis() - start));
-
-      Observable<PricedInstrument> map = instrumentObservable1.flatMap(instrument -> Observable
-            .fromCallable(() -> new PricedInstrument(instrument, priceService.getPrice(instrument.getCode()))));
+      final Observable<Response> result = Observable.zip(pricedInstrumentsObservable, canTradeObservable,
+            (instruments, canTrade) -> new Response(clientId, instruments, canTrade));
 
 
-      System.out.println("after flat map " + (System.currentTimeMillis() - start));
-
-      final Observable<Response> rObservable = Observable.combineLatest(map.toList().toObservable(), canTradeObservable, (instruments, canTrade) -> new Response(clientId, instruments, canTrade));
-
-      System.out.println("after combineLatest " + (System.currentTimeMillis() - start));
-      DeferredResult<Response> deffered = new DeferredResult<>();
-      rObservable.subscribe(deffered::setResult, deffered::setErrorResult);
-      return deffered;
+      DeferredResult<Response>  deferredResult = new DeferredResult<>();
+      result.subscribe(deferredResult::setResult, deferredResult::setErrorResult);
+      return deferredResult;
    }
 
 

@@ -7,7 +7,7 @@ import static com.hadala.concurrency.dao.Sleep.sleep;
 @Service
 public class SimpleClientService implements ClientService {
    @Override
-   public boolean hasPermissionToTrade(int clientId) {
+   public boolean hasPermissionToCryptoCurrency(int clientId) {
       sleep(1000);
       switch (clientId) {
          case 101:
@@ -19,5 +19,17 @@ public class SimpleClientService implements ClientService {
          default:
             return false;
       }
+   }
+
+   @Override
+   public int leverageLevel(int clientId) {
+      sleep(1000);
+      return clientId % 10;
+   }
+
+   @Override
+   public int getDefaultAccountId(int clientId) {
+      sleep(200);
+      return clientId * 17;
    }
 }

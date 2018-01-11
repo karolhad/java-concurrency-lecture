@@ -1,0 +1,8 @@
+ab -n 50 -c 5  http://localhost:8080/comp-future/client/101/instruments
+ab -n 50 -c 5  http://localhost:8080/comp-future-async/client/101/instruments
+
+ab -n 200 -c 10  http://localhost:8080/comp-future/client/101/instruments
+ab -n 200 -c 10  http://localhost:8080/comp-future-async/client/101/instruments
+
+ab -n 200 -c 20  http://localhost:8080/comp-future/client/101/instruments
+ab -n 200 -c 20  http://localhost:8080/comp-future-async/client/101/instruments

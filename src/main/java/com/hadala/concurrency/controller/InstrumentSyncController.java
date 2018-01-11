@@ -32,7 +32,7 @@ public class InstrumentSyncController {
 
    @RequestMapping("/sync/client/{clientId}/instruments")
    public Response getFavouriteInstruments(@PathVariable("clientId") int clientId) {
-      boolean canTrade = clientService.hasPermissionToTrade(clientId); // ~1sec
+      boolean canTrade = clientService.hasPermissionToCryptoCurrency(clientId); // ~1sec
 
       Collection<Instrument> favouriteInstruments = instrumentsService.getFavouriteInstruments(clientId); // ~0.6sec
 
